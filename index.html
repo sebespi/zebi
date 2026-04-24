@@ -1,0 +1,508 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Disneyland Paris — Temps d'attente</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --gold: #C8A96E;
+    --bg: #0A0A0F;
+    --bg2: #12121A;
+    --bg3: #1A1A26;
+    --border: rgba(200, 169, 110, 0.15);
+    --border-hover: rgba(200, 169, 110, 0.35);
+    --text: #F0EDE8;
+    --text-muted: rgba(240, 237, 232, 0.5);
+    --green: #4ADE80;
+    --green-bg: rgba(74, 222, 128, 0.08);
+    --orange: #FB923C;
+    --orange-bg: rgba(251, 146, 60, 0.08);
+    --red: #F87171;
+    --red-bg: rgba(248, 113, 113, 0.08);
+    --gray: rgba(240, 237, 232, 0.3);
+    --gray-bg: rgba(240, 237, 232, 0.05);
+  }
+
+  html, body { height: 100%; }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    overflow-x: hidden;
+  }
+
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      radial-gradient(1px 1px at 15% 20%, rgba(200,169,110,0.4) 0%, transparent 100%),
+      radial-gradient(1px 1px at 75% 10%, rgba(200,169,110,0.3) 0%, transparent 100%),
+      radial-gradient(1px 1px at 40% 60%, rgba(200,169,110,0.2) 0%, transparent 100%),
+      radial-gradient(1px 1px at 88% 45%, rgba(200,169,110,0.3) 0%, transparent 100%),
+      radial-gradient(1px 1px at 5% 80%, rgba(200,169,110,0.2) 0%, transparent 100%),
+      radial-gradient(1px 1px at 60% 85%, rgba(200,169,110,0.25) 0%, transparent 100%),
+      radial-gradient(1px 1px at 95% 70%, rgba(200,169,110,0.2) 0%, transparent 100%),
+      radial-gradient(1px 1px at 30% 35%, rgba(200,169,110,0.15) 0%, transparent 100%);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  /* ── Desktop ── */
+  .page {
+    position: relative;
+    z-index: 1;
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 3rem 1.5rem 4rem;
+  }
+
+  .header { text-align: center; margin-bottom: 2rem; }
+  .crown { display: inline-block; margin-bottom: 0.8rem; opacity: 0.85; }
+  .crown svg { width: 40px; height: 40px; }
+
+  .title {
+    font-family: 'Playfair Display', serif;
+    font-size: clamp(1.6rem, 4vw, 2.4rem);
+    font-weight: 600;
+    letter-spacing: -0.01em;
+    color: var(--text);
+    line-height: 1.15;
+    margin-bottom: 0.3rem;
+  }
+
+  .subtitle {
+    font-size: 0.78rem;
+    font-weight: 300;
+    color: var(--text-muted);
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+  }
+
+  .divider {
+    width: 50px; height: 1px;
+    background: linear-gradient(90deg, transparent, var(--gold), transparent);
+    margin: 0.9rem auto 0;
+  }
+
+  .status-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.6rem 1.1rem;
+    background: var(--bg2);
+    border: 0.5px solid var(--border);
+    border-radius: 10px;
+    margin-bottom: 1rem;
+    font-size: 0.78rem;
+  }
+
+  .status-dot {
+    width: 7px; height: 7px;
+    border-radius: 50%;
+    background: var(--green);
+    display: inline-block;
+    margin-right: 7px;
+    animation: pulse 2s infinite;
+  }
+  .status-dot.offline { background: var(--red); animation: none; }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.4; }
+  }
+
+  .status-left { color: var(--text-muted); display: flex; align-items: center; }
+  .status-left strong { color: var(--text); font-weight: 500; margin-left: 4px; }
+
+  .park-hours {
+    text-align: center;
+    margin-bottom: 0.75rem;
+    font-size: 0.82rem;
+    font-weight: 500;
+    letter-spacing: 0.04em;
+    padding: 0.5rem 1rem;
+    border-radius: 8px;
+    width: 100%;
+    box-sizing: border-box;
+  }
+  .park-hours.open    { color: #4ADE80; background: rgba(74,222,128,0.08); border: 0.5px solid rgba(74,222,128,0.2); }
+  .park-hours.closed  { color: var(--red); background: rgba(248,113,113,0.08); border: 0.5px solid rgba(248,113,113,0.2); }
+  .park-hours.unknown { color: var(--text-muted); background: var(--bg2); border: 0.5px solid var(--border); }
+
+  .refresh-btn {
+    background: none;
+    border: 0.5px solid var(--border);
+    color: var(--gold);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.75rem;
+    font-weight: 500;
+    padding: 4px 12px;
+    border-radius: 20px;
+    cursor: pointer;
+    transition: all 0.2s;
+    letter-spacing: 0.04em;
+  }
+  .refresh-btn:hover { border-color: var(--gold); background: rgba(200,169,110,0.08); }
+  .refresh-btn:active { transform: scale(0.97); }
+  .refresh-btn.loading { opacity: 0.5; pointer-events: none; }
+
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0.9rem;
+  }
+
+  .card {
+    background: var(--bg2);
+    border: 0.5px solid var(--border);
+    border-radius: 14px;
+    padding: 1.1rem 1.2rem 1rem;
+    transition: border-color 0.2s, transform 0.2s;
+    position: relative;
+    overflow: hidden;
+  }
+  .card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, var(--gold), transparent);
+    opacity: 0.5;
+  }
+  .card:hover { border-color: var(--border-hover); transform: translateY(-2px); }
+
+  .card-icon { font-size: 1.2rem; margin-bottom: 0.4rem; display: block; }
+
+  .card-name {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.35rem;
+    font-weight: 400;
+    color: var(--text);
+    line-height: 1.25;
+    margin-bottom: 0.6rem;
+    min-height: unset;
+  }
+
+  .wait-display {
+    display: flex;
+    align-items: baseline;
+    gap: 4px;
+    margin-bottom: 0.6rem;
+  }
+
+  .wait-number {
+    font-size: 2.4rem;
+    font-weight: 300;
+    line-height: 1;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .wait-unit {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    padding-bottom: 3px;
+  }
+
+  .badge {
+    display: inline-block;
+    font-size: 0.68rem;
+    font-weight: 500;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    padding: 2px 8px;
+    border-radius: 20px;
+  }
+
+  .badge-low    { color: var(--green);  background: var(--green-bg); }
+  .badge-medium { color: var(--orange); background: var(--orange-bg); }
+  .badge-high   { color: var(--red);    background: var(--red-bg); }
+  .badge-closed { color: var(--gray);   background: var(--gray-bg); }
+
+  .num-low    { color: var(--green); }
+  .num-medium { color: var(--orange); }
+  .num-high   { color: var(--red); }
+  .num-closed { color: rgba(240,237,232,0.25); }
+
+  .skeleton .card-name,
+  .skeleton .wait-number {
+    background: var(--bg3);
+    border-radius: 4px;
+    color: transparent;
+    animation: shimmer 1.4s infinite;
+  }
+  @keyframes shimmer {
+    0% { opacity: 0.4; } 50% { opacity: 0.8; } 100% { opacity: 0.4; }
+  }
+
+  .error-box {
+    background: rgba(248,113,113,0.06);
+    border: 0.5px solid rgba(248,113,113,0.2);
+    border-radius: 12px;
+    padding: 1.2rem;
+    color: var(--text-muted);
+    font-size: 0.85rem;
+    line-height: 1.7;
+    text-align: center;
+    grid-column: 1 / -1;
+  }
+  .error-box strong { color: var(--red); }
+
+  .footer {
+    text-align: center;
+    margin-top: 1.5rem;
+    font-size: 0.72rem;
+    color: var(--text-muted);
+    letter-spacing: 0.05em;
+  }
+  .footer a { color: var(--gold); text-decoration: none; opacity: 0.8; }
+  .footer a:hover { opacity: 1; }
+
+  /* ── Mobile : tout tenir en un seul écran ── */
+  @media (max-width: 600px) {
+    html, body { height: 100%; overflow: hidden; }
+
+    .page {
+      height: 100dvh;
+      padding: 0;
+      display: flex;
+      flex-direction: column;
+      max-width: 100%;
+    }
+
+    .header {
+      margin-bottom: 0;
+      padding: 0.65rem 1rem 0.4rem;
+      flex-shrink: 0;
+    }
+    .crown { margin-bottom: 0.25rem; }
+    .crown svg { width: 24px; height: 24px; }
+    .title { font-size: 1.1rem; margin-bottom: 0.1rem; }
+    .subtitle { font-size: 0.6rem; }
+    .divider { margin: 0.45rem auto 0; width: 32px; }
+
+    .status-bar {
+      margin: 0.35rem 0.75rem;
+      padding: 0.4rem 0.75rem;
+      font-size: 0.67rem;
+      border-radius: 8px;
+      flex-shrink: 0;
+    }
+
+    .park-hours {
+      margin: 0.3rem 0.75rem 0;
+      padding: 0.35rem 0.75rem;
+      font-size: 0.68rem;
+      border-radius: 7px;
+      flex-shrink: 0;
+      width: auto;
+    }
+
+    /* 2 col × 3 rangées, remplit l'écran */
+    .grid {
+      flex: 1;
+      min-height: 0;
+      grid-template-columns: repeat(2, 1fr);
+      grid-template-rows: repeat(3, 1fr);
+      gap: 0.45rem;
+      padding: 0 0.75rem;
+      overflow: hidden;
+    }
+
+    .card {
+      border-radius: 10px;
+      padding: 0.55rem 0.7rem 0.45rem;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+    .card::before { height: 1.5px; }
+
+    .card-icon { font-size: 0rem; margin-bottom: 0; display: none; }
+
+    .card-name {
+      font-size: 1.05rem;
+      margin-bottom: 0.15rem;
+      min-height: unset;
+      line-height: 1.2;
+    }
+
+    .wait-display { margin-bottom: 0.15rem; gap: 2px; }
+    .wait-number  { font-size: 2rem; }
+    .wait-unit    { font-size: 0.6rem; padding-bottom: 1px; }
+    .badge        { font-size: 0.55rem; padding: 1px 5px; }
+
+    .footer {
+      margin-top: 0;
+      padding: 0.35rem 0 0.5rem;
+      font-size: 0.6rem;
+      flex-shrink: 0;
+    }
+  }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <header class="header">
+    <div class="crown">
+      <svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M6 36 L10 18 L18 28 L24 12 L30 28 L38 18 L42 36 Z" fill="none" stroke="#C8A96E" stroke-width="1.5" stroke-linejoin="round"/>
+        <line x1="6" y1="39" x2="42" y2="39" stroke="#C8A96E" stroke-width="1.5"/>
+        <circle cx="24" cy="12" r="2" fill="#C8A96E"/>
+        <circle cx="10" cy="18" r="1.5" fill="#C8A96E" opacity="0.6"/>
+        <circle cx="38" cy="18" r="1.5" fill="#C8A96E" opacity="0.6"/>
+      </svg>
+    </div>
+    <h1 class="title">Disneyland Paris</h1>
+    <p class="subtitle">Temps d'attente en direct</p>
+    <div class="divider"></div>
+  </header>
+
+  <div class="status-bar">
+    <div class="status-left">
+      <span class="status-dot" id="status-dot"></span>
+      <span id="status-text">Chargement...</span>
+    </div>
+    <button class="refresh-btn" id="refresh-btn" onclick="fetchData()">↻ Actualiser</button>
+  </div>
+
+  <div class="grid" id="grid"></div>
+
+  <footer class="footer">
+    Source : <a href="https://queue-times.com/fr/parks/4/queue_times" target="_blank">queue-times.com</a>
+    &nbsp;·&nbsp; Mise à jour auto toutes les 60 s
+    <div id="small-world-line" style="margin-top:0.3rem; font-size:0.6rem; color:rgba(240,237,232,0.3);">it's a small world · —</div>
+  </footer>
+
+</div>
+
+<script>
+// Attractions identifiées par leur ID queue-times.com
+const RIDES = [
+  { id: 25, label: "Big Thunder Mountain",                icon: "⛰️" },
+  { id: 26, label: "Manoir Hanté",                        icon: "👻" },
+  { id: 8,  label: "Hyperspace Mountain",                 icon: "🌌" },
+  { id: 9,  label: "Star Tours",                          icon: "🚀" },
+  { id: 3,  label: "Pirates des Caraïbes",                icon: "⚓" },
+  { id: 2,  label: "Indiana Jones et le Temple du Péril", icon: "🎩" }
+];
+
+const API = "https://disney-proxy.29girafes.workers.dev/";
+
+function styleForWait(wait, isOpen) {
+  if (!isOpen)    return { numCls:"num-closed", badge:"badge-closed", label:"Fermée" };
+  if (wait === 0) return { numCls:"num-low",    badge:"badge-low",    label:"Sans attente" };
+  if (wait <= 20) return { numCls:"num-low",    badge:"badge-low",    label:"Faible" };
+  if (wait <= 45) return { numCls:"num-medium", badge:"badge-medium", label:"Modérée" };
+  return                 { numCls:"num-high",   badge:"badge-high",   label:"Longue" };
+}
+
+function renderSkeleton() {
+  document.getElementById("grid").innerHTML = RIDES.map(r => `
+    <div class="card skeleton">
+      <span class="card-icon">${r.icon}</span>
+      <div class="card-name">${r.label}</div>
+      <div class="wait-display"><span class="wait-number">--</span><span class="wait-unit">min</span></div>
+      <span class="badge badge-closed">…</span>
+    </div>`).join("");
+}
+
+function renderCards(byId) {
+  document.getElementById("grid").innerHTML = RIDES.map(r => {
+    const ride = byId[r.id];
+    if (!ride) {
+      return `<div class="card">
+        <span class="card-icon">${r.icon}</span>
+        <div class="card-name">${r.label}</div>
+        <div class="wait-display"><span class="wait-number num-closed">—</span></div>
+        <span class="badge badge-closed">Non trouvée</span>
+      </div>`;
+    }
+    const s = styleForWait(ride.wait_time, ride.is_open);
+    const numStr = ride.is_open ? ride.wait_time : "—";
+    const unit   = ride.is_open ? `<span class="wait-unit">min</span>` : "";
+    return `<div class="card">
+      <span class="card-icon">${r.icon}</span>
+      <div class="card-name">${r.label}</div>
+      <div class="wait-display">
+        <span class="wait-number ${s.numCls}">${numStr}</span>${unit}
+      </div>
+      <span class="badge ${s.badge}">${s.label}</span>
+    </div>`;
+  }).join("");
+}
+
+async function tryFetch() {
+  const urls = [
+    API,
+    `https://corsproxy.io/?${encodeURIComponent(API)}`
+  ];
+  for (const url of urls) {
+    try {
+      const r = await fetch(url, { signal: AbortSignal.timeout(5000) });
+      if (!r.ok) continue;
+      return await r.json();
+    } catch(e) { continue; }
+  }
+  throw new Error("Échec du chargement");
+}
+
+async function fetchData() {
+  const btn        = document.getElementById("refresh-btn");
+  const dot        = document.getElementById("status-dot");
+  const statusText = document.getElementById("status-text");
+
+  btn.classList.add("loading");
+  btn.textContent = "Chargement…";
+  renderSkeleton();
+
+  try {
+    const data     = await tryFetch();
+    const allRides = (data.lands || []).flatMap(l => l.rides || []).concat(data.rides || []);
+
+    // Index des attractions par leur ID numérique
+    const byId = {};
+    for (const ride of allRides) {
+      byId[ride.id] = ride;
+    }
+
+    renderCards(byId);
+
+    // "it's a small world" — ligne discrète dans le footer
+    const sw = byId[19];
+    const swEl = document.getElementById("small-world-line");
+    if (sw && swEl) {
+      const swWait = sw.is_open ? `${sw.wait_time} min` : "Fermée";
+      swEl.textContent = `it's a small world · ${swWait}`;
+    }
+
+    dot.className = "status-dot";
+    statusText.innerHTML = `Mis à jour à <strong>${new Date().toLocaleTimeString("fr-FR")}</strong>`;
+
+    dot.className = "status-dot";
+    statusText.innerHTML = `Mis à jour à <strong>${new Date().toLocaleTimeString("fr-FR")}</strong>`;
+  } catch(e) {
+    document.getElementById("grid").innerHTML = `
+      <div class="error-box">
+        <strong>Impossible de charger les données.</strong><br>
+        Vérifiez votre connexion internet et réessayez.
+      </div>`;
+    dot.className = "status-dot offline";
+    statusText.textContent = "Erreur de connexion";
+  }
+
+  btn.classList.remove("loading");
+  btn.textContent = "↻ Actualiser";
+}
+
+fetchData();
+setInterval(fetchData, 60000);
+</script>
+</body>
+</html>
